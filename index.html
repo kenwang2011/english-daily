@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#4F63FF">
+<title>每日单词 · 晨听 20 分钟</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="每日单词">
+<link rel="stylesheet" href="styles.css?v=10">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ========== 首页 ========== -->
+  <section class="screen active" id="screen-home">
+    <div class="home-wrap">
+      <div class="brand">
+        <div class="brand-mark">ABC</div>
+        <div class="brand-txt">
+          <h1>每日单词</h1>
+          <p id="brandSub">六年级 · 晨听单词</p>
+        </div>
+      </div>
+
+      <div class="grade-tabs" id="gradeTabs"></div>
+      <select id="selUnit" class="sel unit-sel" aria-label="选择单元"></select>
+
+      <div class="today-card">
+        <div class="today-date" id="homeDate">—</div>
+        <div class="plan-row">
+          <div class="plan-item">
+            <div class="plan-num" id="planNew">10</div>
+            <div class="plan-lbl" id="planNewLbl">个新词</div>
+          </div>
+          <div class="plan-item">
+            <div class="plan-num" id="planRev">0</div>
+            <div class="plan-lbl">个复习</div>
+          </div>
+          <div class="plan-item">
+            <div class="plan-num" id="planMin">20</div>
+            <div class="plan-lbl">分钟</div>
+          </div>
+        </div>
+        <button class="btn-main" id="btnStart">
+          <span class="btn-main-icon">▶</span>
+          <span id="btnStartTxt">开始今天的 20 分钟</span>
+        </button>
+        <p class="home-hint" id="homeHint">起床就能听 · 不用看屏幕也能跟</p>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-box">
+          <div class="stat-num" id="statStreak">0</div>
+          <div class="stat-lbl">连续天数</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="statKnown">0</div>
+          <div class="stat-lbl">已掌握</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="statTotal">0</div>
+          <div class="stat-lbl">学过总数</div>
+        </div>
+      </div>
+
+      <div class="quick-row">
+        <button class="btn-ghost" id="btnStats">📊 我的进度</button>
+        <button class="btn-ghost" id="btnSettings">⚙️ 设置</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 播放页 ========== -->
+  <section class="screen" id="screen-player">
+    <div class="pl-top">
+      <div class="pl-stage-row">
+        <span class="stage-pill" id="plStage">听新词</span>
+        <span class="pl-remain" id="plRemain">还剩 20 分钟</span>
+      </div>
+      <div class="pl-bar"><div class="pl-bar-fill" id="plBar"></div></div>
+    </div>
+
+    <div class="pl-stage-area">
+      <div class="pl-card" id="plCard">
+        <div class="card-inner" id="cardInner">
+          <div class="word">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pl-bottom">
+      <button class="btn-ctrl" id="btnPause"><span id="pauseIcon">⏸</span><span id="pauseTxt">暂停</span></button>
+      <button class="btn-ctrl" id="btnSkip"><span>⏭</span><span>下一个</span></button>
+      <button class="btn-ctrl danger" id="btnQuit"><span>✕</span><span>结束</span></button>
+    </div>
+  </section>
+
+  <!-- ========== 完成页 ========== -->
+  <section class="screen" id="screen-done">
+    <div class="done-wrap">
+      <div class="done-emoji" id="doneEmoji">🎉</div>
+      <h2 class="done-title">今天的练习完成！</h2>
+      <div class="done-stats">
+        <div class="ds"><span id="doneNew">0</span><small>新词</small></div>
+        <div class="ds"><span id="doneRev">0</span><small>复习</small></div>
+        <div class="ds"><span id="doneMin">0</span><small>分钟</small></div>
+        <div class="ds"><span id="doneStreak">0</span><small>连续天</small></div>
+      </div>
+
+      <div class="review-block" id="reviewBlock">
+        <h3 id="reviewTitle">这 10 个新词，哪些还需要再练？</h3>
+        <p class="rb-sub">默认都记住了。不熟的点了会安排明天重来。</p>
+        <div class="review-list" id="reviewList"></div>
+      </div>
+
+      <div class="next-tip" id="nextTip"></div>
+
+      <button class="btn-main" id="btnDoneHome">回到首页</button>
+    </div>
+  </section>
+
+  <!-- ========== 进度页 ========== -->
+  <section class="screen" id="screen-stats">
+    <div class="page-wrap">
+      <div class="page-head">
+        <button class="btn-back" data-back>‹</button>
+        <h2>我的进度</h2>
+        <span class="head-spacer"></span>
+      </div>
+
+      <div class="grade-tabs" id="gradeTabs2"></div>
+
+      <div class="panel">
+        <h3>记忆盒子分布</h3>
+        <p class="panel-sub">盒子越靠右，说明记得越牢。全部到 5 号盒就毕业了。</p>
+        <div class="boxes" id="boxChart"></div>
+      </div>
+
+      <div class="panel">
+        <h3>最近 14 天</h3>
+        <div class="heat-head" id="heatHead"></div>
+        <div class="heat" id="heatMap"></div>
+        <p class="panel-sub" id="heatTip">—</p>
+      </div>
+
+      <div class="panel">
+        <h3>今天该复习</h3>
+        <div class="due-list" id="dueList"></div>
+      </div>
+
+      <div class="panel">
+        <h3>词汇表 <span class="cnt" id="allCnt"></span></h3>
+        <p class="panel-sub">按单元分组，点标题展开看词。灰底的是还没学的。</p>
+        <div class="unit-list" id="unitList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 设置页 ========== -->
+  <section class="screen" id="screen-settings">
+    <div class="page-wrap">
+      <div class="page-head">
+        <button class="btn-back" data-back>‹</button>
+        <h2>设置</h2>
+        <span class="head-spacer"></span>
+      </div>
+
+      <div class="panel">
+        <h3>发音</h3>
+
+        <div class="field">
+          <label>朗读方式</label>
+          <div class="seg" id="segStyle">
+            <button data-v="teach">讲解式</button>
+            <button data-v="word">逐词</button>
+          </div>
+          <p class="hint">讲解式先讲一句场景，再把「中文 → 单词 → 拼读 → 单词 → 中文 → 例句」连起来说，像老师上课；逐词式只念单词和中文，安静但没什么信息。</p>
+        </div>
+
+        <div class="field">
+          <label>口音</label>
+          <div class="seg" id="segAccent">
+            <button data-v="en-US">美音 US</button>
+            <button data-v="en-GB">英音 UK</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>语速</label>
+          <div class="seg" id="segPace">
+            <button data-v="0.78">慢</button>
+            <button data-v="0.9">标准</button>
+            <button data-v="1.02">快</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>英文发音人</label>
+          <select id="selVoice" class="sel"></select>
+          <p class="hint">美音下，单词、例句和拼读都用预录好的音频（Michelle），这里选的发音人只在没有录音时兜底。选英音则全部由这里的发音人实时朗读。</p>
+        </div>
+
+        <div class="field">
+          <label>中文发音人</label>
+          <select id="selVoiceZh" class="sel"></select>
+          <p class="hint" id="zhVoiceHint">中文用来读释义和环节播报。</p>
+        </div>
+
+        <div class="field">
+          <label>中文语速</label>
+          <div class="seg" id="segZhRate">
+            <button data-v="0.85">慢一点</button>
+            <button data-v="1">标准</button>
+            <button data-v="1.15">快一点</button>
+          </div>
+          <p class="hint">中文不跟上面的「语速」联动，觉得太快或太慢在这里调。</p>
+        </div>
+
+        <p class="hint">中英文要各用一个发音人。只用英文嗓音念汉字会吞字、读不出来，所以这两项是分开的。</p>
+
+        <div class="field">
+          <label>每个新词朗读次数</label>
+          <div class="seg" id="segRepeat">
+            <button data-v="1">1 遍</button>
+            <button data-v="2">2 遍</button>
+            <button data-v="3">3 遍</button>
+          </div>
+        </div>
+
+        <button class="btn-test" id="btnTestVoice">🔊 试听一下</button>
+      </div>
+
+      <div class="panel">
+        <h3>每天练多少</h3>
+
+        <div class="field">
+          <label>每日新词</label>
+          <div class="seg" id="segDailyNew">
+            <button data-v="6">6 个</button>
+            <button data-v="8">8 个</button>
+            <button data-v="10">10 个</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>每日时长</label>
+          <div class="seg" id="segMinutes">
+            <button data-v="15">15 分钟</button>
+            <button data-v="20">20 分钟</button>
+            <button data-v="25">25 分钟</button>
+          </div>
+        </div>
+        <p class="hint">改完设置，下一次开始会按新配置生成内容，首页的数字也会跟着变。</p>
+      </div>
+
+      <div class="panel">
+        <h3>提醒</h3>
+        <div class="field">
+          <label>每天早上提醒我</label>
+          <input type="time" id="inpReminder" class="sel" value="07:00">
+        </div>
+        <p class="hint" id="remindHint">浏览器通知需要先授权，而且页面要开着才会响。最稳的做法是把本页加到主屏幕，每天自己点开。</p>
+        <button class="btn-test" id="btnNotify">开启浏览器通知</button>
+      </div>
+
+      <div class="panel danger-panel">
+        <h3>数据</h3>
+        <p class="hint">进度只保存在这台设备的浏览器里，不会上传。换设备或清缓存会丢失。</p>
+        <button class="btn-danger" id="btnReset">清空所有学习进度</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="confirm-mask" id="confirmBox">
+    <div class="confirm-card">
+      <p id="confirmMsg"></p>
+      <div class="confirm-btns">
+        <button id="confirmCancel">取消</button>
+        <button id="confirmOk" class="ok">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="data/g3.js?v=10"></script>
+<script src="data/g4.js?v=10"></script>
+<script src="data/g5.js?v=10"></script>
+<script src="data/g6.js?v=10"></script>
+<script src="data/guide.js?v=10"></script>
+<script src="data/tips.js?v=10"></script>
+<script src="data/tips-g3.js?v=10"></script>
+<script src="data/tips-g4.js?v=10"></script>
+<script src="data/tips-g5.js?v=10"></script>
+<script src="data/letters.js?v=10"></script>
+<script src="data/zh-audio.js?v=10"></script>
+<script src="data/spell-audio.js?v=10"></script>
+<script src="data/en-audio.js?v=10"></script>
+<script src="words.js?v=10"></script>
+<script src="app.js?v=10"></script>
+</body>
+</html>
