@@ -155,7 +155,7 @@ function shuffleBy(arr, rnd) {
 }
 function uniqByWord(list) {
   const seen = new Set();
-  return list.filter(w => (seen.has(w.w) ? false : (seen.add(w.w), true)));
+  return list.filter(w => (seen.has(w.key) ? false : (seen.add(w.key), true)));
 }
 /* 页面内的确认框。不用浏览器自带的 confirm()：内嵌浏览器、部分手机的主屏幕模式会把它
    直接屏蔽（立即返回「取消」），表现就是点了「结束」没有任何反应。 */
@@ -327,12 +327,13 @@ const EN_BASE = { n: 0.9, s: 0.65, x: 0.85 };    // 各版本合成时的语速�
 const EN_SAY_FIX = {
   'read a book': 'red a book',                       // 六下「读了书」，过去式读 /red/
   'I read a book last night.': 'I red a book last night.',
+  'Yesterday I read a book about space.': 'Yesterday I red a book about space.',
   'Lu Xun is a famous writer.': 'Lu Shoon is a famous writer.'   // Xun 会被读成 Sun
 };
 /* Michelle 单独读这几个短词时含糊（语音识别把 eye 听成 bye、warm 听成 one、slept 听成
    slapped，换语速、加标点都不稳定）。这几个词改用 Jenny 录，识别稳定。只影响单词本身，
    例句里它们读得没问题。 */
-const EN_ALT_VOICE = { bear: 1, eye: 1, her: 1, neck: 1, slept: 1, warm: 1 };
+const EN_ALT_VOICE = { bear: 1, eye: 1, her: 1, neck: 1, slept: 1, warm: 1, half: 1, woke: 1, began: 1, chore: 1 };
 function enClipOf(say, rate) {
   const lib = window.EN_AUDIO;
   if (!lib || (DB.settings.accent || 'en-US') !== 'en-US') return null;
@@ -355,7 +356,7 @@ function allEnLines() {
     if (v !== 'x' && EN_ALT_VOICE[say]) line.v = 'en-US-JennyNeural';
     out[clipKey('en:' + v + ':' + say)] = line;
   };
-  window.GRADES.forEach(g => g.words.forEach(w => { add('n', w.w); add('s', w.w); add('x', w.ex); }));
+  window.GRADES.forEach(g => g.words.forEach(w => { add('n', w.sw); add('s', w.sw); add('x', w.ex); }));
   return out;
 }
 
@@ -639,18 +640,18 @@ function estimateSeconds(script) {
 
 function cueNew(w) {
   const rep = DB.settings.repeat;
-  const script = [{ say: w.w, lang: 'en', rate: 0.56 }, { pause: 700 }];
-  if (rep >= 2) { script.push({ say: w.w, lang: 'en', rate: 0.76 }, { pause: 600 }); }
-  if (rep >= 3) { script.push({ say: w.w, lang: 'en', rate: 0.9 }, { pause: 550 }); }
+  const script = [{ say: w.sw, lang: 'en', rate: 0.56 }, { pause: 700 }];
+  if (rep >= 2) { script.push({ say: w.sw, lang: 'en', rate: 0.76 }, { pause: 600 }); }
+  if (rep >= 3) { script.push({ say: w.sw, lang: 'en', rate: 0.9 }, { pause: 550 }); }
   script.push(
     { say: w.cn, lang: 'zh', rate: 1.0 },
     { pause: 800 },
     /* 例句同样只读一遍，后面留白跟读（原来读两遍，听感是莫名重复） */
     { say: w.ex, lang: 'en', rate: 0.75 },
     { pause: 1800 },
-    { say: w.w, lang: 'en', rate: 0.58 },
+    { say: w.sw, lang: 'en', rate: 0.58 },
     { pause: 2800 },
-    { say: w.w, lang: 'en', rate: 0.72 },
+    { say: w.sw, lang: 'en', rate: 0.72 },
     { pause: 2200 }
   );
   return {
@@ -709,7 +710,9 @@ function spellLettersOf(word) {
   return String(word).toUpperCase().replace(/[^A-Z]/g, '').split('');
 }
 function canSpell(word) {
-  return String(word).length >= 2 && spellLettersOf(word).length >= 2;
+  /* 太长的专有名词（Hong Kong-Zhuhai-Macao Bridge）不拼，二十多个字母念下来没有意义 */
+  const n = spellLettersOf(word).length;
+  return String(word).length >= 2 && n >= 2 && n <= 16;
 }
 
 /* TTS 兜底用的字母名 —— 正常情况下字母走预录音频（LetterAudio），只有音频放不出来才用到这张表。
@@ -740,7 +743,7 @@ function guideOf(w) {
 /* 词级过渡句，见 data/tips.js。没写到的词回落到模板句式。 */
 function tipOf(w) {
   const t = window.WORD_TIPS || {};
-  return t[w.grade + ':' + w.w] || '';
+  return t[w.key] || '';
 }
 
 /* 一个词的讲解段。结构照搬教学音频：
@@ -759,14 +762,14 @@ function cueTeach(w, opt) {
   script.push({ pause: 450 });                     // 换词的换气
   say(askTextOf(w), 'zh', 1.0, 200);               // 每个词都从一句完整的中文开始
 
-  say(w.w, 'en', multi ? 0.78 : 0.88, 150);        // 先听一遍
-  if (DB.settings.repeat >= 3) say(w.w, 'en', 0.7, 200);   // 设置里要 3 遍就多给一遍
+  say(w.sw, 'en', multi ? 0.78 : 0.88, 150);        // 先听一遍
+  if (DB.settings.repeat >= 3) say(w.sw, 'en', 0.7, 200);   // 设置里要 3 遍就多给一遍
   if (spell.length) {
     say(ZH_SPELL_IT, 'zh', 1.0, 260);
     script.push({ spell: w.w, rate: 1 });
     script.push({ pause: 700 });                   // 留白让孩子跟着拼
   }
-  say(w.w, 'en', multi ? 0.86 : 0.9, 240);         // 再听一遍，把字母和整词接回去
+  say(w.sw, 'en', multi ? 0.86 : 0.9, 240);         // 再听一遍，把字母和整词接回去
   say(w.cn, 'zh', 1.0, 320);                       // 落回中文，闭环
 
   say(opt.example || '比如说，', 'zh', 1.0, 80);
@@ -785,13 +788,13 @@ function cueWarm(w) {
     stage: 'warmup', w,
     view: { type: 'word', word: w.w, ph: w.p, cn: w.cn, ex: '', show: ['word', 'ph', 'cn'] },
     script: [
-      { say: w.w, lang: 'en', rate: 0.8 },
+      { say: w.sw, lang: 'en', rate: 0.8 },
       { pause: 420 },
       { say: w.cn, lang: 'zh', rate: 1.0 },
       { pause: 520 },
       { say: w.ex, lang: 'en', rate: 0.82 },
       { pause: 1200 },
-      { say: w.w, lang: 'en', rate: 0.9 },
+      { say: w.sw, lang: 'en', rate: 0.9 },
       { pause: 700 }
     ]
   };
@@ -805,13 +808,13 @@ function cueSpeak(w) {
       /* 先用中文报一下这个词，后面四遍英文才不会变成"无意义的重复音" */
       { say: ZH_READ, lang: 'zh', rate: 1.0, gap: 60 },
       { say: w.cn, lang: 'zh', rate: 1.0, gap: 300 },
-      { say: w.w, lang: 'en', rate: 0.5 },
+      { say: w.sw, lang: 'en', rate: 0.5 },
       { pause: 2400 },
-      { say: w.w, lang: 'en', rate: 0.62 },
+      { say: w.sw, lang: 'en', rate: 0.62 },
       { pause: 2600 },
-      { say: w.w, lang: 'en', rate: 0.72 },
+      { say: w.sw, lang: 'en', rate: 0.72 },
       { pause: 2200 },
-      { say: w.w, lang: 'en', rate: 0.6 },
+      { say: w.sw, lang: 'en', rate: 0.6 },
       { pause: 2400 }
     ]
   };
@@ -828,16 +831,16 @@ function cueSpell(w) {
       /* 中文报词，避免进了拼写环节就只剩英文字母 */
       { say: ZH_SPELL, lang: 'zh', rate: 1.0, gap: 60 },
       { say: w.cn, lang: 'zh', rate: 1.0, gap: 320 },
-      { say: w.w, lang: 'en', rate: 0.6 },
+      { say: w.sw, lang: 'en', rate: 0.6 },
       { pause: 900 }
     ].concat(spell1).concat([
       { pause: 2000 },
       { do: () => revealLetters() },
-      { say: w.w, lang: 'en', rate: 0.7 },
+      { say: w.sw, lang: 'en', rate: 0.7 },
       { pause: 900 }
     ]).concat(spell2).concat([
       { pause: 1200 },
-      { say: w.w, lang: 'en', rate: 0.8 },
+      { say: w.sw, lang: 'en', rate: 0.8 },
       { pause: 900 }
     ])
   };
@@ -851,7 +854,7 @@ function cueQuiz(w, mode) {
       script: [
         { say: w.cn, lang: 'zh', rate: 1.0 },
         { pause: 3000 },
-        { say: w.w, lang: 'en', rate: 0.72 },
+        { say: w.sw, lang: 'en', rate: 0.72 },
         { do: () => showQuizAnswer() },
         { pause: 1600 },
         { say: w.ex, lang: 'en', rate: 0.78 },
@@ -863,7 +866,7 @@ function cueQuiz(w, mode) {
     stage: 'quiz', w,
     view: { type: 'quiz', q: w.w, tip: '中文什么意思？', ans: w.cn },
     script: [
-      { say: w.w, lang: 'en', rate: 0.8 },
+      { say: w.sw, lang: 'en', rate: 0.8 },
       { pause: 2800 },
       { say: w.cn, lang: 'zh', rate: 1.0 },
       { do: () => showQuizAnswer() },
@@ -1773,9 +1776,7 @@ function init() {
     LetterAudio.unlock();
     const accent = DB.settings.accent || 'en-US';
     /* 直接播一段真实讲解，听到的就是上课的样子，不是一个孤零零的单词 */
-    /* pizza 同时含 i 和 a 两个最容易读错的元音字母，正好用来验拼读 */
-    const demo = window.GRADE_MAP.g6.words.find(w => w.w === 'pizza') ||
-      { w: 'pizza', p: '/ˈpiːtsə/', cn: '比萨饼', ex: 'I like pizza very much.' };
+    const demo = window.GRADE_MAP.g6.words.find(w => w.w === 'pumpkin') || curGrade().words[0];
     const cue = (DB.settings.style === 'word')
       ? cueNew(demo)
       : cueTeach(demo, {});

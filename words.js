@@ -17,13 +17,17 @@
     g.units.forEach(function (u, ui) {
       var list = [];
       u.words.forEach(function (w) {
-        if (seen[w.w]) return;                 // 同一年级内同名词只保留第一次出现
-        seen[w.w] = 1;
+        /* 同一年级内同名词只保留第一次出现；确实是两个词条的（run 跑 / run 运转）
+           在数据里给第二个写 id，就当作不同的词 */
+        var wid = w.id || w.w;
+        if (seen[wid]) return;
+        seen[wid] = 1;
         var item = {
           w: w.w, p: w.p, cn: w.cn, ex: w.ex,
+          sw: w.say || w.w,                    // 送去朗读的写法（read 的过去式读 red）
           grade: id, gradeName: g.name,
           unit: u.name, unitIndex: ui,
-          key: id + ':' + w.w
+          key: id + ':' + wid
         };
         list.push(item);
         flat.push(item);
